@@ -9,7 +9,7 @@ from pydantic import BaseModel
 app = FastAPI()
 
 # Static dosyaları serve et
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 # Veritabanı
 rooms: Dict[str, Dict] = {}
