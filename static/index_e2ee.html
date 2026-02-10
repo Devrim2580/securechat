@@ -497,233 +497,142 @@
         </div>
     </div>
 <script>
-    // ========== CRYPTO ==========
-    class SecureChat {
-        constructor() {
-            this.ws = null;
-            this.currentRoom = null;
-            this.userId = null;
-            this.keyPair = null;
-            this.otherPublicKeys = {};
-            this.isConnected = false;
-            
-            this.init();
-        }
+class SecureChat {
+    constructor() {
+        this.ws = null;
+        this.currentRoom = null;
+        this.userId = null;
+        this.keyPair = nacl.box.keyPair();
+        this.otherPublicKeys = {};
+        this.isConnected = false;
 
-        init() {
-            // keypair oluştur
-            this.keyPair = nacl.box.keyPair();
-            this.userId = this.arrayToString(this.keyPair.publicKey).substring(0, 8);
-            document.getElementById('user-id-display').textContent = this.userId;
-            document.getElementById('encryption-status').style.display = 'flex';
-            
-            document.getElementById('message-input').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    this.sendMessage();
-                }
-            });
+        this.userId = this.arrayToString(this.keyPair.publicKey).substring(0, 6);
+        document.getElementById('user-id-display').textContent = this.userId;
+        document.getElementById('encryption-status').style.display = 'flex';
 
-            document.getElementById('message-input').addEventListener('input', (e) => {
-                e.target.style.height = 'auto';
-                e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
-            });
-        }
-
-        arrayToString(arr) {
-            return btoa(String.fromCharCode(...arr));
-        }
-
-        stringToArray(str) {
-            return new Uint8Array(atob(str).split('').map(c => c.charCodeAt(0)));
-        }
-
-        async createRoom() {
-            const res = await fetch('/create-room');
-            const data = await res.json();
-            if (data.status === 'success') {
-                this.currentRoom = data.room_code;
-                document.getElementById('room-code-display').textContent = data.room_code;
-                document.getElementById('copy-btn').style.display = 'block';
-                this.connectWebSocket(data.room_code);
-                this.showStatus(`✅ Oda oluşturuldu: ${data.room_code}`, 'success');
+        document.getElementById('message-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.sendMessage();
             }
+        });
+    }
+
+    arrayToString(arr) {
+        return btoa(String.fromCharCode(...arr));
+    }
+
+    stringToArray(str) {
+        return new Uint8Array(atob(str).split('').map(c => c.charCodeAt(0)));
+    }
+
+    async createRoom() {
+        const res = await fetch('/create-room');
+        const data = await res.json();
+        this.currentRoom = data.room_code;
+        document.getElementById('room-code-display').textContent = data.room_code;
+        document.getElementById('copy-btn').style.display = 'block';
+        this.connectWebSocket(data.room_code);
+    }
+
+    async joinRoom() {
+        const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+        this.currentRoom = code;
+        document.getElementById('room-code-display').textContent = code;
+        document.getElementById('copy-btn').style.display = 'block';
+        this.connectWebSocket(code);
+    }
+
+    connectWebSocket(roomCode) {
+        const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+        this.ws = new WebSocket(`${protocol}://${location.host}/ws/${roomCode}`);
+
+        this.ws.onopen = () => {
+            this.isConnected = true;
+            document.getElementById('input-area').style.display = 'flex';
+            this.ws.send(JSON.stringify({
+                type: 'init',
+                public_key: this.arrayToString(this.keyPair.publicKey)
+            }));
+        };
+
+        this.ws.onmessage = (e) => this.handleMessage(JSON.parse(e.data));
+    }
+
+    handleMessage(data) {
+        if (data.type === 'init_response') {
+            this.otherPublicKeys = data.public_keys;
+            this.updateUserCount();
+        } 
+        if (data.type === 'user_joined') {
+            this.otherPublicKeys[data.user_id] = data.public_key;
+            this.updateUserCount();
+        } 
+        if (data.type === 'message') {
+            this.decryptAndDisplayMessage(data);
         }
+    }
 
-        async joinRoom() {
-            const roomCode = document.getElementById('join-code-input').value.trim().toUpperCase();
-            if (!roomCode) return;
+    updateUserCount() {
+        document.getElementById('room-users-count').textContent = 
+            `Çevrimiçi: ${Object.keys(this.otherPublicKeys).length + 1}`;
+    }
 
-            const res = await fetch(`/room/${roomCode}/info`);
-            const data = await res.json();
+    sendMessage() {
+        const text = document.getElementById('message-input').value.trim();
+        if (!text) return;
 
-            if (data.status === 'active') {
-                this.currentRoom = roomCode;
-                document.getElementById('room-code-display').textContent = roomCode;
-                document.getElementById('copy-btn').style.display = 'block';
-                document.getElementById('messages').innerHTML = '';
-                this.connectWebSocket(roomCode);
-                this.showStatus(`✅ Odaya katıldınız: ${roomCode}`, 'success');
-            } else {
-                this.showStatus('❌ Oda bulunamadı', 'error');
-            }
-        }
+        const nonce = nacl.randomBytes(24);
+        const messageBytes = nacl.util.decodeUTF8(text);
 
-        connectWebSocket(roomCode) {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            this.ws = new WebSocket(`${protocol}//${window.location.host}/ws/${roomCode}`);
-
-            this.ws.onopen = () => {
-                this.isConnected = true;
-                document.getElementById('input-area').style.display = 'flex';
-                document.getElementById('messages').innerHTML = '';
-
-                this.ws.send(JSON.stringify({
-                    type: 'init',
-                    public_key: this.arrayToString(this.keyPair.publicKey)
-                }));
-            };
-
-            this.ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                this.handleMessage(data);
-            };
-
-            this.ws.onerror = () => {
-                this.showStatus('❌ Bağlantı hatası', 'error');
-            };
-
-            this.ws.onclose = () => {
-                this.isConnected = false;
-                document.getElementById('input-area').style.display = 'none';
-                this.showStatus('❌ Bağlantı kesildi', 'error');
-            };
-        }
-
-        handleMessage(data) {
-            if (data.type === 'init_response') {
-                this.otherPublicKeys = data.public_keys;
-                this.updateUserCount();
-            } else if (data.type === 'user_joined') {
-                this.otherPublicKeys[data.user_id] = data.public_key;
-                this.updateUserCount();
-            } else if (data.type === 'user_left') {
-                delete this.otherPublicKeys[data.user_id];
-                this.updateUserCount();
-            } else if (data.type === 'message') {
-                this.decryptAndDisplayMessage(data);
-            } else if (data.type === 'error') {
-                this.showStatus(data.message, 'error');
-            }
-        }
-
-        updateUserCount() {
-            const count = Object.keys(this.otherPublicKeys).length + 1;
-            document.getElementById('room-users-count').textContent = `Çevrimiçi: ${count}`;
-        }
-
-        sendMessage() {
-            const input = document.getElementById('message-input');
-            const message = input.value.trim();
-            if (!message || !this.isConnected) return;
-
-            const recipientPublicKey = Object.values(this.otherPublicKeys)[0];
-            if (!recipientPublicKey) {
-                this.showStatus("❌ Karşı taraf yok", "error");
-                return;
-            }
-
-            const nonce = nacl.randomBytes(24);
-            const messageBytes = nacl.util.decodeUTF8(message);
-
-            const encrypted = nacl.box(
-                messageBytes,
-                nonce,
-                this.stringToArray(recipientPublicKey),
-                this.keyPair.secretKey
-            );
+        Object.entries(this.otherPublicKeys).forEach(([userId, pubKeyStr]) => {
+            const pubKey = this.stringToArray(pubKeyStr);
+            const encrypted = nacl.box(messageBytes, nonce, pubKey, this.keyPair.secretKey);
 
             this.ws.send(JSON.stringify({
                 type: 'message',
                 encrypted: this.arrayToString(encrypted),
                 nonce: this.arrayToString(nonce)
             }));
+        });
 
-            input.value = '';
-            input.style.height = 'auto';
-        }
-
-        decryptAndDisplayMessage(data) {
-            try {
-                const encrypted = this.stringToArray(data.encrypted);
-                const nonce = this.stringToArray(data.nonce);
-                const senderPublicKey = this.stringToArray(data.sender_public_key);
-
-                const decrypted = nacl.box.open(
-                    encrypted,
-                    nonce,
-                    senderPublicKey,
-                    this.keyPair.secretKey
-                );
-
-                if (decrypted) {
-                    const message = nacl.util.encodeUTF8(decrypted);
-                    const isOwn = data.sender_id === this.userId;
-                    this.displayMessage(message, isOwn, data.sender_id);
-                }
-            } catch (e) {
-                console.error("Decrypt error:", e);
-            }
-        }
-
-        displayMessage(text, isOwn, senderId = null) {
-            const messagesDiv = document.getElementById('messages');
-            const emptyState = messagesDiv.querySelector('.empty-state');
-            if (emptyState) emptyState.remove();
-
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isOwn ? 'own' : ''}`;
-
-            const bubble = document.createElement('div');
-            bubble.className = `message-bubble ${isOwn ? 'own' : 'other'}`;
-            bubble.textContent = text;
-
-            const info = document.createElement('div');
-            info.className = 'message-info';
-            info.textContent = isOwn ? 'Sen' : (senderId ? senderId.substring(0, 6) + '...' : 'Anonim');
-
-            messageDiv.appendChild(bubble);
-            messageDiv.appendChild(info);
-            messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-
-        showStatus(message, type) {
-            const status = document.createElement('div');
-            status.className = `status ${type}`;
-            status.textContent = message;
-            document.body.appendChild(status);
-
-            setTimeout(() => {
-                status.style.opacity = '0';
-                setTimeout(() => status.remove(), 300);
-            }, 3000);
-        }
-
-        copyRoomCode() {
-            const code = document.getElementById('room-code-display').textContent;
-            navigator.clipboard.writeText(code).then(() => {
-                this.showStatus('✅ Kopyalandı!', 'success');
-            });
-        }
+        this.displayMessage(text, true);
+        document.getElementById('message-input').value = '';
     }
 
-    const secureChat = new SecureChat();
-    function createRoom() { secureChat.createRoom(); }
-    function joinRoom() { secureChat.joinRoom(); }
-    function sendMessage() { secureChat.sendMessage(); }
-    function copyRoomCode() { secureChat.copyRoomCode(); }
+    decryptAndDisplayMessage(data) {
+        try {
+            const encrypted = this.stringToArray(data.encrypted);
+            const nonce = this.stringToArray(data.nonce);
+            const senderPublicKey = this.stringToArray(data.sender_public_key);
+
+            const decrypted = nacl.box.open(encrypted, nonce, senderPublicKey, this.keyPair.secretKey);
+            if (decrypted) {
+                const text = nacl.util.encodeUTF8(decrypted);
+                this.displayMessage(text, false);
+            }
+        } catch {}
+    }
+
+    displayMessage(text, isOwn) {
+        const div = document.createElement('div');
+        div.className = `message ${isOwn ? 'own' : ''}`;
+        div.innerHTML = `<div class="message-bubble ${isOwn ? 'own' : 'other'}">${text}</div>`;
+        document.getElementById('messages').appendChild(div);
+    }
+
+    copyRoomCode() {
+        navigator.clipboard.writeText(this.currentRoom);
+    }
+}
+
+const secureChat = new SecureChat();
+function createRoom() { secureChat.createRoom(); }
+function joinRoom() { secureChat.joinRoom(); }
+function sendMessage() { secureChat.sendMessage(); }
+function copyRoomCode() { secureChat.copyRoomCode(); }
 </script>
+
 
    
 </body>
