@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
-# Static UI (isteğe göre /ui)
+# Static UI
 app.mount("/ui", StaticFiles(directory="static", html=True), name="static")
 
 # Oda verisi
@@ -19,13 +19,14 @@ class EncryptedMessage(BaseModel):
     encrypted: str
     nonce: str
     sender_public_key: str
+    recipient_id: str = None  # EKLEME: Alıcı ID'si
 
 def generate_room_code():
     return f"{uuid.uuid4().hex[:6]}".upper()
 
 @app.get("/", response_class=HTMLResponse)
 def home():
-    with open("static/index_e2ee.html", "r", encoding="utf-8") as f:
+    with open("static/index_e2ee_FIXED.html", "r", encoding="utf-8") as f:
         return f.read()
 
 @app.get("/create-room")
@@ -100,6 +101,9 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
             message_data = json.loads(data)
 
             if message_data.get("type") == "message":
+                # DÜZELTME: Mesajı sadece belirli alıcıya gönder
+                recipient_id = message_data.get("recipient_id")
+                
                 payload = {
                     "type": "message",
                     "sender_id": user_id,
@@ -110,12 +114,24 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
 
                 rooms[room_code]["messages"].append(payload)
 
-                # 🔁 Odaya bağlı HERKESE gönder (gönderen dahil)
-                for user in list(rooms[room_code]["users"]):
-                    try:
-                        await user["websocket"].send_text(json.dumps(payload))
-                    except:
-                        pass
+                # Mesajı sadece alıcıya gönder (gönderene değil!)
+                if recipient_id:
+                    for user in rooms[room_code]["users"]:
+                        if user["id"] == recipient_id:
+                            try:
+                                await user["websocket"].send_text(json.dumps(payload))
+                                print(f"📤 Mesaj gönderildi: {user_id} → {recipient_id}")
+                            except Exception as e:
+                                print(f"❌ Mesaj gönderilemedi: {e}")
+                            break
+                else:
+                    # recipient_id yoksa herkese gönder (eski davranış)
+                    for user in list(rooms[room_code]["users"]):
+                        if user["id"] != user_id:  # Gönderen hariç
+                            try:
+                                await user["websocket"].send_text(json.dumps(payload))
+                            except:
+                                pass
 
     except WebSocketDisconnect:
         pass
