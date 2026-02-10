@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔐 DevChat - E2EE ChatBox</title>
-    <!-- TweetNaCl.js untuk cryptography -->
+    <title>🔐 SecureChat E2EE</title>
     <script src="https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl-fast.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tweetnacl-util@0.15.1/nacl-util.min.js"></script>
     
@@ -15,230 +14,134 @@
             box-sizing: border-box;
         }
 
-        :root {
-            --primary: #0f172a;
-            --secondary: #1e293b;
-            --accent: #06b6d4;
-            --accent-dark: #0891b2;
-            --success: #10b981;
-            --error: #ef4444;
-            --text-primary: #f1f5f9;
-            --text-secondary: #cbd5e1;
-            --bg-dark: #020617;
-            --border: #334155;
-        }
-
-        html, body {
-            height: 100%;
-            width: 100%;
-            background: linear-gradient(135deg, var(--bg-dark) 0%, var(--primary) 100%);
-            color: var(--text-primary);
-            font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
-            letter-spacing: 0.5px;
-            overflow: hidden;
-        }
-
-        .app-container {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            height: 100vh;
-            gap: 1px;
-            background: var(--border);
-        }
-
-        /* ============ SIDEBAR ============ */
-        .sidebar {
-            background: var(--primary);
-            padding: 24px;
-            overflow-y: auto;
-            border-right: 1px solid var(--border);
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
             display: flex;
-            flex-direction: column;
-        }
-
-        .logo {
-            display: flex;
+            justify-content: center;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 32px;
-            font-size: 24px;
-            font-weight: 700;
-            letter-spacing: -1px;
+            padding: 20px;
         }
 
-        .logo-icon {
+        .container {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            max-width: 600px;
+            width: 100%;
+            border: 1px solid rgba(100, 116, 139, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #06b6d4;
+            margin-bottom: 10px;
             font-size: 28px;
         }
 
-        .sidebar-section {
-            margin-bottom: 32px;
+        .subtitle {
+            text-align: center;
+            color: #94a3b8;
+            margin-bottom: 30px;
+            font-size: 14px;
         }
 
-        .section-title {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            color: var(--text-secondary);
-            margin-bottom: 12px;
-        }
-
-        .input-group {
+        .room-controls {
             display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 12px;
+            gap: 10px;
+            margin-bottom: 20px;
         }
 
         input[type="text"] {
-            background: var(--secondary);
-            border: 1px solid var(--border);
-            color: var(--text-primary);
-            padding: 12px 16px;
-            border-radius: 8px;
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #334155;
+            border-radius: 10px;
+            background: #1e293b;
+            color: #e2e8f0;
             font-size: 14px;
-            transition: all 0.3s ease;
+            transition: all 0.3s;
         }
 
         input[type="text"]:focus {
             outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
-        }
-
-        .button-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            border-color: #06b6d4;
+            background: #0f172a;
         }
 
         button {
-            padding: 12px 16px;
+            padding: 12px 24px;
             border: none;
-            border-radius: 8px;
-            font-size: 13px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            color: white;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            transition: all 0.3s;
+            font-size: 14px;
         }
 
-        .btn-primary {
-            background: var(--accent);
-            color: var(--bg-dark);
-            flex: 1;
-        }
-
-        .btn-primary:hover {
-            background: var(--accent-dark);
+        button:hover {
             transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(6, 182, 212, 0.3);
         }
 
-        .btn-secondary {
-            background: var(--secondary);
-            color: var(--text-primary);
-            border: 1px solid var(--border);
+        button:active {
+            transform: translateY(0);
         }
 
-        .btn-secondary:hover {
-            background: rgba(6, 182, 212, 0.1);
-            border-color: var(--accent);
+        .status {
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
         }
 
-        .user-info {
-            background: rgba(6, 182, 212, 0.05);
-            border: 1px solid rgba(6, 182, 212, 0.2);
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-top: auto;
-            font-size: 12px;
+        .status.success {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid #10b981;
+            color: #10b981;
         }
 
-        .user-id {
-            color: var(--accent);
-            font-weight: 700;
-            word-break: break-all;
-            margin-bottom: 4px;
+        .status.error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #ef4444;
         }
 
-        .encryption-status {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            color: var(--success);
-            font-size: 11px;
+        .status.info {
+            background: rgba(6, 182, 212, 0.2);
+            border: 1px solid #06b6d4;
+            color: #06b6d4;
         }
 
-        /* ============ MAIN CHAT ============ */
         .chat-container {
-            background: var(--primary);
-            display: grid;
-            grid-template-rows: auto 1fr auto;
-            overflow: hidden;
+            display: none;
         }
 
-        .chat-header {
-            background: var(--secondary);
-            padding: 16px 24px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .room-status {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .room-code {
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--accent);
-            font-family: 'Courier New', monospace;
-            letter-spacing: 1px;
-        }
-
-        .room-users {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        .copy-btn {
-            background: rgba(6, 182, 212, 0.1);
-            border: 1px solid var(--accent);
-            color: var(--accent);
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .copy-btn:hover {
-            background: var(--accent);
-            color: var(--bg-dark);
-        }
-
-        .messages {
+        .chat-box {
+            height: 400px;
             overflow-y: auto;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+            border: 2px solid #334155;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #0f172a;
         }
 
         .message {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 10px;
+            max-width: 80%;
+            word-wrap: break-word;
             animation: slideIn 0.3s ease;
-        }
-
-        .message.own {
-            align-items: flex-end;
         }
 
         @keyframes slideIn {
@@ -252,388 +155,354 @@
             }
         }
 
-        .message-bubble {
-            max-width: 70%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            word-wrap: break-word;
-            font-size: 14px;
-            line-height: 1.4;
+        .message.sent {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            margin-left: auto;
+            color: white;
+            text-align: right;
         }
 
-        .message-bubble.own {
-            background: var(--accent);
-            color: var(--bg-dark);
+        .message.received {
+            background: #1e293b;
+            border: 1px solid #334155;
         }
 
-        .message-bubble.other {
-            background: var(--secondary);
-            color: var(--text-primary);
-            border: 1px solid var(--border);
+        .message.system {
+            background: rgba(100, 116, 139, 0.2);
+            text-align: center;
+            font-style: italic;
+            color: #94a3b8;
+            max-width: 100%;
         }
 
         .message-info {
             font-size: 11px;
-            color: var(--text-secondary);
+            opacity: 0.7;
+            margin-top: 5px;
         }
 
-        .message.own .message-info {
-            text-align: right;
-        }
-
-        .empty-state {
+        .message-input {
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: var(--text-secondary);
-            text-align: center;
+            gap: 10px;
         }
 
-        .empty-icon {
-            font-size: 64px;
-            margin-bottom: 16px;
-            opacity: 0.5;
-        }
-
-        /* ============ INPUT AREA ============ */
-        .input-area {
-            background: var(--secondary);
-            border-top: 1px solid var(--border);
-            padding: 16px 24px;
-            display: flex;
-            gap: 12px;
-            align-items: flex-end;
-        }
-
-        .input-wrapper {
+        .message-input input {
             flex: 1;
-            position: relative;
         }
 
-        #message-input {
-            width: 100%;
-            background: var(--primary);
-            border: 1px solid var(--border);
-            color: var(--text-primary);
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            resize: none;
-            max-height: 100px;
-            font-family: inherit;
-            transition: all 0.3s ease;
+        .copy-btn {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            padding: 8px 16px;
+            font-size: 12px;
         }
 
-        #message-input:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
-        }
-
-        .send-btn {
-            background: var(--accent);
-            color: var(--bg-dark);
-            padding: 12px 20px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
+        .user-count {
+            text-align: center;
+            color: #10b981;
+            margin-bottom: 10px;
             font-weight: 600;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
         }
 
-        .send-btn:hover {
-            background: var(--accent-dark);
-            transform: translateY(-2px);
-        }
-
-        .send-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* ============ STATUS ============ */
-        .status {
-            position: fixed;
-            top: 24px;
-            right: 24px;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            opacity: 0;
-            transform: translateY(-20px);
-            transition: all 0.3s ease;
-            z-index: 1000;
-            animation: statusShow 0.3s ease forwards;
-        }
-
-        @keyframes statusShow {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .status.success {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--success);
-            border: 1px solid var(--success);
-        }
-
-        .status.error {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--error);
-            border: 1px solid var(--error);
-        }
-
-        /* ============ SCROLLBAR ============ */
         ::-webkit-scrollbar {
-            width: 6px;
+            width: 8px;
         }
 
         ::-webkit-scrollbar-track {
-            background: transparent;
+            background: #0f172a;
+            border-radius: 10px;
         }
 
         ::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 3px;
+            background: #334155;
+            border-radius: 10px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: var(--accent);
-        }
-
-        /* ============ RESPONSIVE ============ */
-        @media (max-width: 768px) {
-            .app-container {
-                grid-template-columns: 1fr;
-            }
-
-            .sidebar {
-                display: none;
-            }
-
-            .message-bubble {
-                max-width: 85%;
-            }
+            background: #475569;
         }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- SIDEBAR -->
-        <div class="sidebar">
-            <div class="logo">
-                <span class="logo-icon">🔐</span>
-                <span>DevChat</span>
-            </div>
+    <div class="container">
+        <h1>🔐 SecureChat</h1>
+        <p class="subtitle">End-to-End Encrypted Chat</p>
 
-            <div class="sidebar-section">
-                <div class="section-title">Oda Oluştur</div>
-                <button class="btn-primary" onclick="createRoom()" style="width: 100%; margin-bottom: 8px;">
-                    ➕ Yeni Oda
-                </button>
-            </div>
+        <div id="status" class="status"></div>
 
-            <div class="sidebar-section">
-                <div class="section-title">Mevcut Odaya Katıl</div>
-                <div class="input-group">
-                    <input type="text" id="join-code-input" placeholder="Oda kodunu yapıştır..." maxlength="10">
-                    <button class="btn-secondary" onclick="joinRoom()" style="width: 100%;">Katıl</button>
-                </div>
-            </div>
-
-            <div class="user-info">
-                <div>Kullanıcı ID:</div>
-                <div class="user-id" id="user-id-display">-</div>
-                <div class="encryption-status" id="encryption-status" style="display: none;">
-                    <span>✓</span>
-                    <span>E2EE Aktif</span>
-                </div>
-            </div>
+        <div id="roomControls" class="room-controls">
+            <button onclick="secureChat.createRoom()">➕ Yeni Oda</button>
+            <input type="text" id="roomCodeInput" placeholder="Oda kodunu girin">
+            <button onclick="secureChat.joinRoom()">Katıl</button>
         </div>
 
-        <!-- CHAT -->
-        <div class="chat-container">
-            <!-- Header -->
-            <div class="chat-header">
-                <div class="room-status">
-                    <div class="room-code" id="room-code-display">-</div>
-                    <div class="room-users" id="room-users-count">Çevrimiçi: 0</div>
-                </div>
-                <button class="copy-btn" onclick="copyRoomCode()" id="copy-btn" style="display: none;">
-                    📋 Kopyala
-                </button>
-            </div>
-
-            <!-- Messages -->
-            <div class="messages" id="messages">
-                <div class="empty-state">
-                    <div class="empty-icon">💬</div>
-                    <div>Odaya katıl veya yeni oda oluştur</div>
-                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">
-                        E2EE ile korunan sohbet
-                    </div>
-                </div>
-            </div>
-
-            <!-- Input -->
-            <div class="input-area" id="input-area" style="display: none;">
-                <div class="input-wrapper">
-                    <textarea id="message-input" placeholder="Şifrelenmiş mesaj yazın..." rows="1"></textarea>
-                </div>
-                <button class="send-btn" onclick="sendMessage()" title="Gönder (Enter)">
-                    ↗
-                </button>
+        <div id="chatContainer" class="chat-container">
+            <div class="user-count" id="userCount">👥 Çevrimiçi: 0</div>
+            <div id="roomInfo" style="text-align: center; margin-bottom: 10px; color: #94a3b8;"></div>
+            <div id="chatBox" class="chat-box"></div>
+            <div class="message-input">
+                <input type="text" id="messageInput" placeholder="Mesajınızı yazın..." onkeypress="if(event.key==='Enter') secureChat.sendMessage()">
+                <button onclick="secureChat.sendMessage()">Gönder</button>
             </div>
         </div>
     </div>
-<script>
-class SecureChat {
-    constructor() {
-        this.ws = null;
-        this.currentRoom = null;
-        this.userId = null;
-        this.keyPair = nacl.box.keyPair();
-        this.otherPublicKeys = {};
-        this.isConnected = false;
 
-        this.userId = this.arrayToString(this.keyPair.publicKey).substring(0, 6);
-        document.getElementById('user-id-display').textContent = this.userId;
-        document.getElementById('encryption-status').style.display = 'flex';
-
-        document.getElementById('message-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                this.sendMessage();
+    <script>
+        class SecureChat {
+            constructor() {
+                this.ws = null;
+                this.roomCode = null;
+                this.userId = null;
+                this.keyPair = null;
+                this.otherPublicKeys = {}; // {user_id: public_key_uint8array}
             }
-        });
-    }
 
-    arrayToString(arr) {
-        return btoa(String.fromCharCode(...arr));
-    }
+            init() {
+                // Public/Private key pair oluştur
+                this.keyPair = nacl.box.keyPair();
+                console.log('🔑 Keypair oluşturuldu');
+            }
 
-    stringToArray(str) {
-        return new Uint8Array(atob(str).split('').map(c => c.charCodeAt(0)));
-    }
+            showStatus(message, type = 'info') {
+                const statusEl = document.getElementById('status');
+                statusEl.textContent = message;
+                statusEl.className = `status ${type}`;
+                statusEl.style.display = 'block';
+                
+                setTimeout(() => {
+                    statusEl.style.display = 'none';
+                }, 3000);
+            }
 
-    async createRoom() {
-        const res = await fetch('/create-room');
-        const data = await res.json();
-        this.currentRoom = data.room_code;
-        document.getElementById('room-code-display').textContent = data.room_code;
-        document.getElementById('copy-btn').style.display = 'block';
-        this.connectWebSocket(data.room_code);
-    }
+            async createRoom() {
+                try {
+                    const response = await fetch('/create-room');
+                    const data = await response.json();
+                    
+                    this.roomCode = data.room_code;
+                    document.getElementById('roomCodeInput').value = this.roomCode;
+                    
+                    this.showStatus(`✅ Oda oluşturuldu: ${this.roomCode}`, 'success');
+                    
+                    // Otomatik katıl
+                    setTimeout(() => this.joinRoom(), 500);
+                } catch (error) {
+                    this.showStatus('❌ Oda oluşturulamadı', 'error');
+                    console.error('Hata:', error);
+                }
+            }
 
-    async joinRoom() {
-        const code = document.getElementById('join-code-input').value.trim().toUpperCase();
-        this.currentRoom = code;
-        document.getElementById('room-code-display').textContent = code;
-        document.getElementById('copy-btn').style.display = 'block';
-        this.connectWebSocket(code);
-    }
+            joinRoom() {
+                const roomCode = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+                
+                if (!roomCode) {
+                    this.showStatus('⚠️ Oda kodu gerekli', 'error');
+                    return;
+                }
 
-    connectWebSocket(roomCode) {
-        const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-        this.ws = new WebSocket(`${protocol}://${location.host}/ws/${roomCode}`);
+                this.roomCode = roomCode;
+                this.init(); // Keypair oluştur
 
-        this.ws.onopen = () => {
-            this.isConnected = true;
-            document.getElementById('input-area').style.display = 'flex';
-            this.ws.send(JSON.stringify({
-                type: 'init',
-                public_key: this.arrayToString(this.keyPair.publicKey)
-            }));
-        };
+                // WebSocket bağlantısı
+                const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${wsProtocol}//${window.location.host}/ws/${roomCode}`;
+                
+                this.ws = new WebSocket(wsUrl);
 
-        this.ws.onmessage = (e) => this.handleMessage(JSON.parse(e.data));
-    }
+                this.ws.onopen = () => {
+                    console.log('🔌 WebSocket bağlandı');
+                    
+                    // Public key'i gönder
+                    this.ws.send(JSON.stringify({
+                        type: 'init',
+                        public_key: this.arrayToString(this.keyPair.publicKey)
+                    }));
+                };
 
-    handleMessage(data) {
-        if (data.type === 'init_response') {
-            this.otherPublicKeys = data.public_keys;
-            this.updateUserCount();
-        } 
-        if (data.type === 'user_joined') {
-            this.otherPublicKeys[data.user_id] = data.public_key;
-            this.updateUserCount();
-        } 
-        if (data.type === 'message') {
-            this.decryptAndDisplayMessage(data);
+                this.ws.onmessage = (event) => {
+                    this.handleMessage(JSON.parse(event.data));
+                };
+
+                this.ws.onerror = (error) => {
+                    console.error('WebSocket hatası:', error);
+                    this.showStatus('❌ Bağlantı hatası', 'error');
+                };
+
+                this.ws.onclose = () => {
+                    console.log('🔌 WebSocket kapandı');
+                    this.showStatus('⚠️ Bağlantı kesildi', 'error');
+                    document.getElementById('chatContainer').style.display = 'none';
+                    document.getElementById('roomControls').style.display = 'flex';
+                };
+            }
+
+            handleMessage(data) {
+                console.log('📨 Mesaj alındı:', data.type);
+
+                switch (data.type) {
+                    case 'init_response':
+                        this.userId = data.user_id;
+                        
+                        // Diğer kullanıcıların public key'lerini sakla
+                        for (const [userId, pubKeyStr] of Object.entries(data.public_keys)) {
+                            if (userId !== this.userId) {
+                                this.otherPublicKeys[userId] = this.stringToArray(pubKeyStr);
+                            }
+                        }
+                        
+                        this.showStatus(`✅ Odaya katıldınız (ID: ${this.userId})`, 'success');
+                        
+                        // Chat UI'yi göster
+                        document.getElementById('roomControls').style.display = 'none';
+                        document.getElementById('chatContainer').style.display = 'block';
+                        
+                        const roomInfo = document.getElementById('roomInfo');
+                        roomInfo.innerHTML = `📍 Oda: <strong>${this.roomCode}</strong> 
+                            <button class="copy-btn" onclick="secureChat.copyRoomCode()">📋 Kopyala</button>`;
+                        
+                        this.updateUserCount();
+                        break;
+
+                    case 'user_joined':
+                        // Yeni kullanıcının public key'ini sakla
+                        this.otherPublicKeys[data.user_id] = this.stringToArray(data.public_key);
+                        this.addSystemMessage(`👤 Kullanıcı katıldı (${data.user_id.substring(0, 8)})`);
+                        this.updateUserCount();
+                        break;
+
+                    case 'user_left':
+                        delete this.otherPublicKeys[data.user_id];
+                        this.addSystemMessage(`👋 Kullanıcı ayrıldı (${data.user_id.substring(0, 8)})`);
+                        this.updateUserCount();
+                        break;
+
+                    case 'message':
+                        this.decryptAndDisplay(data);
+                        break;
+
+                    case 'error':
+                        this.showStatus(`❌ ${data.message}`, 'error');
+                        break;
+                }
+            }
+
+            sendMessage() {
+                const input = document.getElementById('messageInput');
+                const message = input.value.trim();
+
+                if (!message || !this.ws) return;
+
+                // HER KULLANICI İÇİN AYRI ŞİFRELE (Bu kısım önemli!)
+                for (const [userId, recipientPublicKey] of Object.entries(this.otherPublicKeys)) {
+                    const messageBytes = nacl.util.decodeUTF8(message);
+                    const nonce = nacl.randomBytes(24);
+
+                    // DÜZELTME: Alıcının public key'i ile şifrele
+                    const encrypted = nacl.box(
+                        messageBytes,
+                        nonce,
+                        recipientPublicKey,  // ALICININ PUBLIC KEY'İ
+                        this.keyPair.secretKey  // KENDİ SECRET KEY'İN
+                    );
+
+                    // Şifreli mesajı gönder
+                    this.ws.send(JSON.stringify({
+                        type: 'message',
+                        encrypted: this.arrayToString(encrypted),
+                        nonce: this.arrayToString(nonce),
+                        recipient_id: userId  // Kime gönderildiği
+                    }));
+                }
+
+                // Kendi mesajını UI'da göster (şifresiz)
+                this.addMessage(message, 'sent', 'Sen');
+                
+                input.value = '';
+            }
+
+            decryptAndDisplay(data) {
+                try {
+                    // Gönderenin public key'ini al
+                    const senderPublicKey = this.stringToArray(data.sender_public_key);
+                    const encrypted = this.stringToArray(data.encrypted);
+                    const nonce = this.stringToArray(data.nonce);
+
+                    // DÜZELTME: Gönderenin public key'i + kendi secret key ile aç
+                    const decrypted = nacl.box.open(
+                        encrypted,
+                        nonce,
+                        senderPublicKey,  // GÖNDERENİN PUBLIC KEY'İ
+                        this.keyPair.secretKey  // KENDİ SECRET KEY'İN
+                    );
+
+                    if (!decrypted) {
+                        console.error('❌ Mesaj deşifre edilemedi');
+                        this.addSystemMessage('⚠️ Mesaj okunamadı (şifre hatası)');
+                        return;
+                    }
+
+                    const message = nacl.util.encodeUTF8(decrypted);
+                    
+                    // Kendi mesajın değilse göster
+                    if (data.sender_id !== this.userId) {
+                        this.addMessage(message, 'received', data.sender_id.substring(0, 8));
+                    }
+                    
+                } catch (error) {
+                    console.error('Deşifre hatası:', error);
+                    this.addSystemMessage('⚠️ Mesaj okunamadı');
+                }
+            }
+
+            addMessage(text, type, sender) {
+                const chatBox = document.getElementById('chatBox');
+                const messageEl = document.createElement('div');
+                messageEl.className = `message ${type}`;
+                
+                const time = new Date().toLocaleTimeString('tr-TR', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                
+                messageEl.innerHTML = `
+                    <div>${text}</div>
+                    <div class="message-info">${sender} • ${time}</div>
+                `;
+                
+                chatBox.appendChild(messageEl);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+
+            addSystemMessage(text) {
+                const chatBox = document.getElementById('chatBox');
+                const messageEl = document.createElement('div');
+                messageEl.className = 'message system';
+                messageEl.textContent = text;
+                chatBox.appendChild(messageEl);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+
+            updateUserCount() {
+                const count = Object.keys(this.otherPublicKeys).length + 1; // +1 kendin
+                document.getElementById('userCount').textContent = `👥 Çevrimiçi: ${count}`;
+            }
+
+            copyRoomCode() {
+                navigator.clipboard.writeText(this.roomCode);
+                this.showStatus('📋 Oda kodu kopyalandı', 'success');
+            }
+
+            // Utility functions
+            arrayToString(array) {
+                return btoa(String.fromCharCode.apply(null, array));
+            }
+
+            stringToArray(str) {
+                return new Uint8Array(atob(str).split('').map(c => c.charCodeAt(0)));
+            }
         }
-    }
 
-    updateUserCount() {
-        document.getElementById('room-users-count').textContent = 
-            `Çevrimiçi: ${Object.keys(this.otherPublicKeys).length + 1}`;
-    }
-
-    sendMessage() {
-        const text = document.getElementById('message-input').value.trim();
-        if (!text) return;
-
-        const nonce = nacl.randomBytes(24);
-        const messageBytes = nacl.util.decodeUTF8(text);
-
-        Object.entries(this.otherPublicKeys).forEach(([userId, pubKeyStr]) => {
-            const pubKey = this.stringToArray(pubKeyStr);
-            const encrypted = nacl.box(messageBytes, nonce, pubKey, this.keyPair.secretKey);
-
-            this.ws.send(JSON.stringify({
-                type: 'message',
-                encrypted: this.arrayToString(encrypted),
-                nonce: this.arrayToString(nonce)
-            }));
-        });
-
-        this.displayMessage(text, true);
-        document.getElementById('message-input').value = '';
-    }
-
-    decryptAndDisplayMessage(data) {
-        try {
-            const encrypted = this.stringToArray(data.encrypted);
-            const nonce = this.stringToArray(data.nonce);
-            const senderPublicKey = this.stringToArray(data.sender_public_key);
-
-            const decrypted = nacl.box.open(encrypted, nonce, senderPublicKey, this.keyPair.secretKey);
-            if (decrypted) {
-                const text = nacl.util.encodeUTF8(decrypted);
-                this.displayMessage(text, false);
-            }
-        } catch {}
-    }
-
-    displayMessage(text, isOwn) {
-        const div = document.createElement('div');
-        div.className = `message ${isOwn ? 'own' : ''}`;
-        div.innerHTML = `<div class="message-bubble ${isOwn ? 'own' : 'other'}">${text}</div>`;
-        document.getElementById('messages').appendChild(div);
-    }
-
-    copyRoomCode() {
-        navigator.clipboard.writeText(this.currentRoom);
-    }
-}
-
-const secureChat = new SecureChat();
-function createRoom() { secureChat.createRoom(); }
-function joinRoom() { secureChat.joinRoom(); }
-function sendMessage() { secureChat.sendMessage(); }
-function copyRoomCode() { secureChat.copyRoomCode(); }
-</script>
-
-
-   
+        // Global instance
+        const secureChat = new SecureChat();
+    </script>
 </body>
 </html>
