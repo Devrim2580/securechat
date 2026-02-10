@@ -1,7 +1,4 @@
 {
-  "build": {
-    "builder": "dockerfile"
-  },
   "deploy": {
     "restartPolicyType": "on_failure",
     "restartPolicyMaxRetries": 5
