@@ -8,10 +8,12 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
-# Static UI
-app.mount("/ui", StaticFiles(directory="static", html=True), name="static")
+@app.get("/", response_class=HTMLResponse)
+def root():
+    with open("static/index_e2ee.html", "r", encoding="utf-8") as f:
+        return f.read()
 
-# Oda verisi
+
 rooms: Dict[str, Dict] = {}
 user_sessions: Dict[str, Dict] = {}
 
@@ -33,7 +35,7 @@ def home():
 def create_room():
     room_code = generate_room_code()
     rooms[room_code] = {
-        "users": [],        # [{id, websocket, public_key}]
+        "users": [],        
         "messages": [],
         "public_keys": {}
     }
@@ -67,7 +69,7 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
     user_sessions[user_id] = {"room": room_code}
 
     try:
-        # INIT: Public key al
+        
         init_message = await websocket.receive_text()
         init_data = json.loads(init_message)
 
@@ -75,7 +77,7 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
             user_data["public_key"] = init_data.get("public_key")
             rooms[room_code]["public_keys"][user_id] = init_data.get("public_key")
 
-            # Yeni kullanıcıya mevcut public key'leri gönder
+            
             await websocket.send_text(json.dumps({
                 "type": "init_response",
                 "user_id": user_id,
@@ -83,7 +85,7 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
                 "message": f"✅ Odaya bağlandınız ({user_id})"
             }))
 
-            # Diğerlerine yeni kullanıcıyı bildir
+            
             for user in rooms[room_code]["users"]:
                 if user["id"] != user_id:
                     try:
@@ -95,13 +97,13 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
                     except:
                         pass
 
-        # MESAJ DÖNGÜSÜ
+        
         while True:
             data = await websocket.receive_text()
             message_data = json.loads(data)
 
             if message_data.get("type") == "message":
-                # DÜZELTME: Mesajı sadece belirli alıcıya gönder
+                
                 recipient_id = message_data.get("recipient_id")
                 
                 payload = {
@@ -114,7 +116,7 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
 
                 rooms[room_code]["messages"].append(payload)
 
-                # Mesajı sadece alıcıya gönder (gönderene değil!)
+                
                 if recipient_id:
                     for user in rooms[room_code]["users"]:
                         if user["id"] == recipient_id:
@@ -125,9 +127,9 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
                                 print(f"❌ Mesaj gönderilemedi: {e}")
                             break
                 else:
-                    # recipient_id yoksa herkese gönder (eski davranış)
+                    
                     for user in list(rooms[room_code]["users"]):
-                        if user["id"] != user_id:  # Gönderen hariç
+                        if user["id"] != user_id:  
                             try:
                                 await user["websocket"].send_text(json.dumps(payload))
                             except:
@@ -136,12 +138,12 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
     except WebSocketDisconnect:
         pass
     finally:
-        # Kullanıcıyı çıkar
+        
         rooms[room_code]["users"] = [u for u in rooms[room_code]["users"] if u["id"] != user_id]
         rooms[room_code]["public_keys"].pop(user_id, None)
         user_sessions.pop(user_id, None)
 
-        # Diğerlerine bildir
+        
         for user in rooms[room_code]["users"]:
             try:
                 await user["websocket"].send_text(json.dumps({
